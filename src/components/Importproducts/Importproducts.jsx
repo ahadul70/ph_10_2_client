@@ -1,25 +1,32 @@
-import { use, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router";
+import useAxiosSecurity from "../../context/AuthContext/useAxiosSecurity";
 
 export const Importproducts = () => {
   const [imports, setImports] = useState([]);
+  const axiosSecurity = useAxiosSecurity();
 
   // Load imports initially
   useEffect(() => {
     fetchImports();
-  }, []);
+  }, [axiosSecurity]);
 
   const fetchImports = async () => {
-    const res = await fetch("https://phserver-nine.vercel.app/myimports");
-    const data = await res.json();
-    setImports(data);
+    try {
+      const res = await axiosSecurity.get("/myimports");
+      setImports(res.data);
+    } catch (err) {
+      console.error("Error fetching imports:", err);
+    }
   };
 
   const handleRemove = async (id) => {
-    await fetch(`https://phserver-nine.vercel.app/myimports/${id}`, {
-      method: "DELETE",
-    });
-    setImports((prev) => prev.filter((p) => p._id !== id));
+    try {
+      await axiosSecurity.delete(`/myimports/${id}`);
+      setImports((prev) => prev.filter((p) => p._id !== id));
+    } catch (err) {
+      console.error("Error removing import:", err);
+    }
   };
 
   return (
@@ -34,7 +41,7 @@ export const Importproducts = () => {
             className="bg-slate-400 rounded-2xl shadow-md overflow-hidden hover:shadow-xl transition-shadow"
           >
             <img
-              src={p.image}
+              src={p.image || null}
               alt={p.name}
               className="w-full h-48 object-cover"
             />
@@ -44,6 +51,9 @@ export const Importproducts = () => {
               <p className="text-white text-sm">Origin: {p.country}</p>
               <p className="text-yellow-500 font-semibold">⭐ {p.rating}</p>
               <p className="text-white">Available: {p.quantity}</p>
+              {p.seller && (
+                <p className="text-blue-200 text-xs italic">Seller: {p.seller}</p>
+              )}
               <Link to={`/importdetails/${p._id}`}>
                 <button className="mt-2 w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-xl transition">
                   See Details

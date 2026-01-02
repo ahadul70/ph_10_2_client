@@ -1,18 +1,14 @@
 import React, { useContext, useEffect, useState } from "react";
-import axios from "axios";
 import { useLocation, useNavigate } from "react-router";
 import { AuthContext } from "../../context/AuthContext/AuthContext";
+import useAxiosSecurity from "../../context/AuthContext/useAxiosSecurity";
 
 const CreateExportProduct = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const from = location.state?.from || "/";
   const { user } = useContext(AuthContext);
-  useEffect(() => {
-    if (!user) {
-      navigate("/login", { state: { from: from } });
-    }
-  }, [user, navigate, from]);
+  const axiosSecurity = useAxiosSecurity();
+
   const [product, setProduct] = useState({
     name: "",
     image: "",
@@ -20,8 +16,18 @@ const CreateExportProduct = () => {
     originCountry: "",
     rating: "",
     quantity: "",
+    seller: user?.displayName || user?.email || "Anonymous",
   });
   const [message, setMessage] = useState("");
+
+  useEffect(() => {
+    if (user) {
+      setProduct(prev => ({
+        ...prev,
+        seller: user.displayName || user.email || "Anonymous"
+      }));
+    }
+  }, [user]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -40,9 +46,8 @@ const CreateExportProduct = () => {
     };
 
     try {
-      await axios.post("https://phserver-nine.vercel.app/addexports", payload, {
-        headers: { "Content-Type": "application/json" },
-      });
+      await axiosSecurity.post("/addexports", payload);
+      await axiosSecurity.post("/products", payload);
 
       setMessage("✅ Product added successfully!");
       setProduct({
@@ -52,28 +57,11 @@ const CreateExportProduct = () => {
         originCountry: "",
         rating: "",
         quantity: "",
+        seller: user?.displayName || user?.email || "Anonymous",
       });
     } catch (err) {
-      console.error(err);
-      setMessage("❌ Failed to add product.");
-    }
-    try {
-      await axios.post("https://phserver-nine.vercel.app/products", payload, {
-        headers: { "Content-Type": "application/json" },
-      });
-
-      setMessage("✅ Product added successfully!");
-      setProduct({
-        name: "",
-        image: "",
-        price: "",
-        originCountry: "",
-        rating: "",
-        quantity: "",
-      });
-    } catch (err) {
-      console.error(err);
-      setMessage("❌ Failed to add product.");
+      console.error("Submission Error:", err.response?.data || err.message);
+      setMessage(`❌ Failed to add product: ${err.response?.data?.message || err.message}`);
     }
   };
 
@@ -149,6 +137,17 @@ const CreateExportProduct = () => {
             className="w-full p-2 border rounded border-black  text-white"
             required
           />
+
+          <div className="space-y-1">
+            <label className="text-white text-sm font-medium ml-1">Seller</label>
+            <input
+              name="seller"
+              value={product.seller}
+              readOnly
+              className="w-full p-2 border rounded border-black bg-slate-600 text-gray-300 cursor-not-allowed"
+              placeholder="Seller Name"
+            />
+          </div>
 
           <button
             type="submit"

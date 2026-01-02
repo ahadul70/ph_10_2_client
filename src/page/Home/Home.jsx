@@ -1,8 +1,9 @@
 import React from "react";
 import { PopularProducts } from "../../components/Popularproducts/PopularProducts";
+import { NavLink } from "react-router";
 
 const productspromise = fetch(
-  "https://phserver-nine.vercel.app/popularproducts"
+  `${import.meta.env.VITE_API_URL}/popularproducts`
 ).then((res) => res.json());
 
 export default function Home() {
@@ -23,9 +24,9 @@ export default function Home() {
             <button className="px-6 py-3 bg-blue-400 hover:bg-blue-600 rounded-full font-semibold transition">
               Start Trading
             </button>
-            <button className="px-6 py-3 border border-blue-400 rounded-full hover:bg-blue-400/10 transition">
+            <NavLink to="/dashboard/overview" className="px-6 py-3 border border-blue-400 rounded-full hover:bg-blue-400/10 transition">
               Explore Dashboard
-            </button>
+            </NavLink>
           </div>
         </div>
 

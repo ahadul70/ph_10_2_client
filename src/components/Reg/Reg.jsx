@@ -27,7 +27,7 @@ export default function Reg() {
           email: result.user.email,
           image: result.user.photoURL,
         };
-        fetch("https://phserver-nine.vercel.app/users", {
+        fetch(`${import.meta.env.VITE_API_URL}/users`, {
           method: "post",
           headers: {
             "content-type": "application/json",
@@ -83,6 +83,18 @@ export default function Reg() {
       if (name || photoURL) {
         await updateProfile(user, { displayName: name, photoURL });
       }
+
+      // Save user to backend DB
+      const newUser = {
+        name: name || user.displayName,
+        email: user.email,
+        image: photoURL || user.photoURL || "",
+      };
+      await fetch(`${import.meta.env.VITE_API_URL}/users`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newUser),
+      });
 
       // Reset form
       setEmail("");
@@ -183,9 +195,8 @@ export default function Reg() {
 
           <button
             type="submit"
-            className={`btn btn-neutral w-full mt-4 ${
-              loading ? "loading" : ""
-            }`}
+            className={`btn btn-neutral w-full mt-4 ${loading ? "loading" : ""
+              }`}
             disabled={loading}
           >
             {loading ? "Signing Up..." : "Sign Up"}

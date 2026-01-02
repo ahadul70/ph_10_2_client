@@ -1,13 +1,13 @@
-import React, { useContext } from "react";
+import React from "react";
 import { Navigate, useLocation } from "react-router";
-import { AuthContext } from "../context/AuthContext/AuthContext";
+import useAuth from "../context/AuthContext/useAuth";
 
 export default function PrivateRoute({ children }) {
-  const { user, loading } = useContext(AuthContext);
+  const { user, loading } = useAuth();
   const location = useLocation();
 
   if (loading) {
-    return <span className="loading loading-bars loading-xl"></span>;
+    return <div className="flex justify-center items-center h-screen"><span className="loading loading-spinner loading-lg"></span></div>;
   }
 
   if (user) {
@@ -15,5 +15,5 @@ export default function PrivateRoute({ children }) {
   }
 
   // Pass the attempted path as `from` in state
-  return <Navigate to="/login" state={location.pathname}  />;
+  return <Navigate to="/login" state={location.pathname} />;
 }

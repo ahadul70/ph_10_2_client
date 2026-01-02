@@ -9,13 +9,40 @@ export default function Login() {
 
   const [showpass, setShowpass] = useState(false);
 
-  const { signInUser } = use(AuthContext);
+  const { signInUser, Signinwithgoogle } = use(AuthContext);
   const location = useLocation();
   //console.log(location);
 
   const navigate = useNavigate();
 
   const handleshowpass = () => setShowpass(!showpass);
+
+  const handleGoogleSignIn = () => {
+    Signinwithgoogle()
+      .then((result) => {
+        const user = result.user;
+        const newUser = {
+          name: user.displayName,
+          email: user.email,
+          image: user.photoURL,
+        };
+        fetch(`${import.meta.env.VITE_API_URL}/users`, {
+          method: "post",
+          headers: {
+            "content-type": "application/json",
+          },
+          body: JSON.stringify(newUser),
+        }).then((res) => res.json());
+
+        toast.success(`Welcome ${user.displayName || "User"}!`);
+        const from = location.state || "/";
+        navigate(from, { replace: true });
+      })
+      .catch((error) => {
+        console.error("Google sign-in error:", error);
+        toast.error("Google Sign-In failed. Please try again.");
+      });
+  };
 
   const handleSignIn = (e) => {
     e.preventDefault();
@@ -26,8 +53,26 @@ export default function Login() {
     }
 
     signInUser(email, password)
-      .then((userCredential) => {
-        //console.log("✅ User signed in:", userCredential.user);
+      .then(async (userCredential) => {
+        const user = userCredential.user;
+        // console.log("✅ User signed in:", user);
+
+        // Save/Sync user with backend DB
+        const userData = {
+          name: user.displayName,
+          email: user.email,
+          image: user.photoURL || "",
+        };
+        try {
+          await fetch(`${import.meta.env.VITE_API_URL}/users`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(userData),
+          });
+        } catch (dbErr) {
+          console.error("Failed to sync user with DB:", dbErr);
+        }
+
         setEmail("");
         setPassword("");
 
@@ -91,12 +136,46 @@ export default function Login() {
               </button>
             </fieldset>
 
+            <div className="divider my-4">OR</div>
+
+            <button
+              type="button"
+              onClick={handleGoogleSignIn}
+              className="btn flex items-center justify-center gap-2 bg-white text-black border border-[#e5e5e5] hover:bg-gray-100 transition-all w-full"
+            >
+              <svg
+                aria-label="Google logo"
+                width="18"
+                height="18"
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 512 512"
+              >
+                <g>
+                  <path fill="#fff" d="M0 0h512v512H0z" />
+                  <path
+                    fill="#34a853"
+                    d="M153 292c30 82 118 95 171 60h62v48A192 192 0 0190 341"
+                  />
+                  <path
+                    fill="#4285f4"
+                    d="m386 400a140 175 0 0053-179H260v74h102q-7 37-38 57"
+                  />
+                  <path
+                    fill="#fbbc02"
+                    d="m90 341a208 200 0 010-171l63 49q-12 37 0 73"
+                  />
+                  <path
+                    fill="#ea4335"
+                    d="m153 219c22-69 116-109 179-50l55-54c-78-75-230-72-297 55"
+                  />
+                </g>
+              </svg>
+              <span>Login with Google</span>
+            </button>
+
             <p className="mt-4 text-center">
               Don’t have an account?{" "}
-              <Link
-                to="/registration"
-                className="link link-hover text-blue-500"
-              >
+              <Link to="/registration" className="link link-hover text-blue-500">
                 Sign Up
               </Link>
             </p>

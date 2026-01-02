@@ -2,31 +2,22 @@ import React, { useContext, useEffect, useState } from "react";
 import { Exportproduct } from "../../components/Exportproduct/Exportproduct";
 import { AuthContext } from "../../context/AuthContext/AuthContext";
 import { useNavigate, useLocation } from "react-router";
+import useAxiosSecurity from "../../context/AuthContext/useAxiosSecurity";
 
-export const MyExports = () => {
+const MyExports = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const from = location.state?.from || "/";
-
   const { user } = useContext(AuthContext);
+  const axiosSecurity = useAxiosSecurity();
   const [exports, setExports] = useState([]);
 
-  // Redirect to login if not authenticated
-  useEffect(() => {
-    if (!user) {
-      navigate("/login", { state: { from: from } });
-    }
-  }, [user, navigate, from]);
-
-  // Fetch exports only after user exists
   useEffect(() => {
     if (user?.email) {
-      fetch(`https://phserver-nine.vercel.app/myexports?email=${user.email}`)
-        .then((res) => res.json())
-        .then((data) => setExports(data))
+      axiosSecurity.get("/myexports")
+        .then((res) => setExports(res.data))
         .catch((err) => console.error("Error fetching exports:", err));
     }
-  }, [user]);
+  }, [user, axiosSecurity]);
 
   return (
     <div className="my-8">
@@ -37,3 +28,5 @@ export const MyExports = () => {
     </div>
   );
 };
+
+export default MyExports;

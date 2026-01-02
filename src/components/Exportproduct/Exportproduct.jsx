@@ -1,20 +1,21 @@
 import { useEffect, useRef, useState } from "react";
+import useAxiosSecurity from "../../context/AuthContext/useAxiosSecurity";
 
 export const Exportproduct = () => {
   const [exports, setExports] = useState([]);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const exportref = useRef(null);
+  const axiosSecurity = useAxiosSecurity();
 
   // Load exports initially
   useEffect(() => {
     fetchExports();
-  }, []);
+  }, [axiosSecurity]);
 
   const fetchExports = async () => {
     try {
-      const res = await fetch("https://phserver-nine.vercel.app/myexports");
-      const data = await res.json();
-      setExports(data);
+      const res = await axiosSecurity.get("/myexports");
+      setExports(res.data);
     } catch (err) {
       console.error("Error fetching exports:", err);
     }
@@ -23,9 +24,7 @@ export const Exportproduct = () => {
   // Remove product
   const handleRemove = async (id) => {
     try {
-      await fetch(`https://phserver-nine.vercel.app/myexports/${id}`, {
-        method: "DELETE",
-      });
+      await axiosSecurity.delete(`/myexports/${id}`);
       setExports((prev) => prev.filter((p) => p._id !== id));
     } catch (err) {
       console.error("Error removing export:", err);
@@ -48,16 +47,12 @@ export const Exportproduct = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const res = await fetch(
-        `https://https://phserver-nine.vercel.app/myexports/myexports/${selectedProduct._id}`,
-        {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(selectedProduct),
-        }
+      const res = await axiosSecurity.patch(
+        `/myexports/${selectedProduct._id}`,
+        selectedProduct
       );
 
-      if (res.ok) {
+      if (res.status === 200) {
         // Update UI immediately
         setExports((prev) =>
           prev.map((p) => (p._id === selectedProduct._id ? selectedProduct : p))
@@ -79,7 +74,7 @@ export const Exportproduct = () => {
             className=" bg-slate-400 rounded-2xl shadow-md overflow-hidden hover:shadow-xl transition-shadow"
           >
             <img
-              src={p.image}
+              src={p.image || null}
               alt={p.name}
               className="w-full h-48 object-cover"
             />
@@ -88,7 +83,18 @@ export const Exportproduct = () => {
               <p className="text-white font-medium">{p.price}</p>
               <p className="text-white text-sm">Origin: {p.country}</p>
               <p className="text-yellow-500 font-semibold">⭐ {p.rating}</p>
-              <p className="text-white">Available: {p.quantity}</p>
+              <div className="flex items-center justify-between">
+                <p className="text-white">Available: {p.quantity}</p>
+                <span className={`px-2 py-0.5 rounded-full text-[10px] uppercase font-bold tracking-wider ring-1 ${p.status === 'approved'
+                    ? 'bg-green-500/20 text-green-400 ring-green-500/50'
+                    : 'bg-yellow-500/20 text-yellow-400 ring-yellow-500/50'
+                  }`}>
+                  {p.status || 'pending'}
+                </span>
+              </div>
+              {p.seller && (
+                <p className="text-blue-200 text-xs italic">Seller: {p.seller}</p>
+              )}
 
               <button
                 onClick={() => handleExportRef(p)}

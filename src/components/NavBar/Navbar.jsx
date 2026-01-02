@@ -22,14 +22,9 @@ export default function NavBar() {
       <li>
         <NavLink to="/allproducts">All Products</NavLink>
       </li>
+
       <li>
-        <NavLink to="/addexports">Add Exports</NavLink>
-      </li>
-      <li>
-        <NavLink to="/myimports">My Imports</NavLink>
-      </li>
-      <li>
-        <NavLink to="/myexports">My Exports</NavLink>
+        <NavLink to="/dashboard/overview">Dashboard</NavLink>
       </li>
 
     </>

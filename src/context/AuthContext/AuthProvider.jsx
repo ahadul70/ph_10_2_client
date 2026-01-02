@@ -9,13 +9,12 @@ import {
   updateProfile,
 } from "firebase/auth";
 import React, { useEffect, useState } from "react";
+import axios from "axios";
 
 import { AuthContext } from "./AuthContext";
 import { auth } from "../../firebase.config";
 
 const googleprovider = new GoogleAuthProvider();
-
-import axios from "axios";
 
 export default function AuthProvider({ children }) {
   const [user, setUser] = React.useState(null);
@@ -64,6 +63,8 @@ export default function AuthProvider({ children }) {
       if (currentUser) {
         try {
           const token = await currentUser.getIdToken();
+          localStorage.setItem("token", token); // Store for axios
+
           const response = await axios.get(`${import.meta.env.VITE_API_URL}/users/role/${currentUser.email}`, {
             headers: { Authorization: `Bearer ${token}` }
           });
@@ -74,6 +75,7 @@ export default function AuthProvider({ children }) {
         }
       } else {
         setRole(null);
+        localStorage.removeItem("token");
       }
 
       setLoading(false);

@@ -1,26 +1,28 @@
-import React, { useContext, useEffect } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { Importproducts } from "../../components/Importproducts/Importproducts";
 import { useLocation, useNavigate } from "react-router";
 import { AuthContext } from "../../context/AuthContext/AuthContext";
+import useAxiosSecurity from "../../context/AuthContext/useAxiosSecurity";
 
-const importpromise = fetch("https://phserver-nine.vercel.app/myimports").then(
-  (res) => res.json()
-);
 const Myimports = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const from = location.state?.from || "/";
   const { user } = useContext(AuthContext);
+  const axiosSecurity = useAxiosSecurity();
+  const [imports, setImports] = useState([]);
+
   useEffect(() => {
-    if (!user) {
-      navigate("/login", { state: { from: from } });
+    if (user?.email) {
+      axiosSecurity.get("/myimports")
+        .then(res => setImports(res.data))
+        .catch(err => console.error("Error fetching imports:", err));
     }
-  }, [user, navigate, from]);
+  }, [user, axiosSecurity]);
+
   return (
     <>
       <div className=" bg-gradient-to-b from-slate-900 to-slate-800">
-        {" "}
-        <Importproducts importpromise={importpromise} />
+        <Importproducts products={imports} />
       </div>
     </>
   );

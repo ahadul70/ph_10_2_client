@@ -35,7 +35,7 @@ export const PopularProducts = ({ productspromise }) => {
             className="bg-slate-500 rounded-2xl shadow-md overflow-hidden hover:shadow-xl transition-shadow"
           >
             <img
-              src={p.image}
+              src={p.image || null}
               alt={p.name}
               className="w-full h-48 object-cover"
             />

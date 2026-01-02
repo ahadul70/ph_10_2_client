@@ -1,24 +1,23 @@
 import React, { useEffect, useRef, useContext, useState } from "react";
 import { useParams, useNavigate } from "react-router";
 import { AuthContext } from "../../context/AuthContext/AuthContext";
+import useAxiosSecurity from "../../context/AuthContext/useAxiosSecurity";
 
 const ProductDetails = () => {
   const { id } = useParams();
   const [product, setProduct] = useState(null);
-  //console.log("this product from product details", product);
+  const axiosSecurity = useAxiosSecurity();
 
   const [quantity, setQuantity] = useState("");
   const { user } = useContext(AuthContext);
   const navigate = useNavigate();
   const importref = useRef(null);
-  //console.log("this is product details", product);
 
   useEffect(() => {
-    fetch(`https://phserver-nine.vercel.app/products/${id}`)
-      .then((res) => res.json())
-      .then((data) => setProduct(data))
+    axiosSecurity.get(`/products/${id}`)
+      .then((res) => setProduct(res.data))
       .catch((err) => console.error("Failed to load product:", err));
-  }, [id]);
+  }, [id, axiosSecurity]);
 
   useEffect(() => {
     if (!user) {
@@ -37,7 +36,6 @@ const ProductDetails = () => {
     }
 
     const importData = {
-      email: user?.email,
       productId: product._id,
       quantity,
       name: product.name,
@@ -45,25 +43,18 @@ const ProductDetails = () => {
       price: product.price,
       rating: product.rating,
       country: product.country,
+      seller: product.seller || "Anonymous",
     };
 
-    await fetch("https://phserver-nine.vercel.app/myimports", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(importData),
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        //console.log("Order placed:", data);
-        handleCloseModal();
-      })
-      .catch((err) => console.error("Import failed:", err));
-
-    // optional: show success
-    alert("Product imported successfully!");
-
-    // optional immediate UI update
-    navigate("/myimports");
+    try {
+      await axiosSecurity.post("/myimports", importData);
+      handleCloseModal();
+      alert("Product imported successfully!");
+      navigate("/dashboard/my-imports");
+    } catch (err) {
+      console.error("Import failed:", err);
+      alert("Import failed. Please try again.");
+    }
   };
 
   if (!product) {
@@ -83,7 +74,7 @@ const ProductDetails = () => {
     <div className="min-h-screen p-6  bg-gradient-to-b from-slate-900 to-slate-800">
       <h1 className="text-3xl font-bold mb-6">{product.name}</h1>
       <img
-        src={product.image}
+        src={product.image || null}
         alt={product.name}
         className="w-full max-w-md mx-auto h-64 object-cover rounded-xl shadow-md"
       />
@@ -92,6 +83,9 @@ const ProductDetails = () => {
         <p>Origin: {product.country}</p>
         <p>Rating: ⭐ {product.rating}</p>
         <p>Available: {product.quantity}</p>
+        {product.seller && (
+          <p className="text-blue-400 font-medium italic">Seller: {product.seller}</p>
+        )}
       </div>
 
       <button className="btn btn-primary mt-4" onClick={handleImportRef}>

@@ -1,5 +1,8 @@
 {
   "projects": {
-    "default": "assignment-9-c42cc"
-  }
+    "default": "assignment-9-c42cc",
+    "ph10v2": "ph10scic2"
+  },
+  "targets": {},
+  "etags": {}
 }

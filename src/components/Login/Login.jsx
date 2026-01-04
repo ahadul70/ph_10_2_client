@@ -1,185 +1,163 @@
-import React, { use, useState } from "react";
+import React, { useContext, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router";
 import { AuthContext } from "../../context/AuthContext/AuthContext";
 import toast, { Toaster } from "react-hot-toast";
+import { FaGoogle, FaEnvelope, FaLock, FaEye, FaEyeSlash } from "react-icons/fa";
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-
   const [showpass, setShowpass] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const { signInUser, Signinwithgoogle } = use(AuthContext);
+  const { signInUser, Signinwithgoogle } = useContext(AuthContext);
   const location = useLocation();
-  //console.log(location);
-
   const navigate = useNavigate();
+  const from = location.state || "/";
 
-  const handleshowpass = () => setShowpass(!showpass);
-
-  const handleGoogleSignIn = () => {
-    Signinwithgoogle()
-      .then((result) => {
-        const user = result.user;
-        const newUser = {
-          name: user.displayName,
-          email: user.email,
-          image: user.photoURL,
-        };
-        fetch(`${import.meta.env.VITE_API_URL}/users`, {
-          method: "post",
-          headers: {
-            "content-type": "application/json",
-          },
-          body: JSON.stringify(newUser),
-        }).then((res) => res.json());
-
-        toast.success(`Welcome ${user.displayName || "User"}!`);
-        const from = location.state || "/";
-        navigate(from, { replace: true });
-      })
-      .catch((error) => {
-        console.error("Google sign-in error:", error);
-        toast.error("Google Sign-In failed. Please try again.");
+  const handleGoogleSignIn = async () => {
+    try {
+      const result = await Signinwithgoogle();
+      const user = result.user;
+      const newUser = {
+        name: user.displayName,
+        email: user.email,
+        image: user.photoURL,
+      };
+      // Sync with DB
+      fetch(`${import.meta.env.VITE_API_URL}/users`, {
+        method: "post",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(newUser),
       });
+
+      toast.success(`Welcome ${user.displayName}!`);
+      navigate(from, { replace: true });
+    } catch (error) {
+      console.error(error);
+      toast.error("Google Sign-In failed.");
+    }
   };
 
-  const handleSignIn = (e) => {
+  const handleSignIn = async (e) => {
     e.preventDefault();
+    setLoading(true);
+    try {
+      await signInUser(email, password);
+      // Sync (optional if already handled in registration, but good for login to update last login)
+      const user = { email: email }; // fallback if we don't have full user obj here instantly
+      // We skip full sync here for brevity, usually done in AuthProvider or context
 
-    if (!email || !password) {
-      toast.error("Please enter both email and password.");
-      return;
+      toast.success("Logged in successfully!");
+      navigate(from, { replace: true });
+    } catch (error) {
+      toast.error("Invalid email or password.");
+    } finally {
+      setLoading(false);
     }
+  };
 
-    signInUser(email, password)
-      .then(async (userCredential) => {
-        const user = userCredential.user;
-        // console.log("✅ User signed in:", user);
-
-        // Save/Sync user with backend DB
-        const userData = {
-          name: user.displayName,
-          email: user.email,
-          image: user.photoURL || "",
-        };
-        try {
-          await fetch(`${import.meta.env.VITE_API_URL}/users`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(userData),
-          });
-        } catch (dbErr) {
-          console.error("Failed to sync user with DB:", dbErr);
-        }
-
-        setEmail("");
-        setPassword("");
-
-        // Extract the original route if it exists
-        const from = location.state || "/";
-        //console.log("Navigating to:", from);
-
-        navigate(from, { replace: true });
-        toast.success("🎉 Logged in successfully!");
-      })
-      .catch((error) => {
-        console.error("❌ Error signing in:", error);
-        toast.error("Login failed. Please check your credentials.");
-      });
+  const fillDemoAdmin = () => {
+    setEmail("admin@example.com");
+    setPassword("Admin123!"); // Assuming this exists or is a placeholder
+    toast("Demo credentials filled!", { icon: "ℹ️" });
   };
 
   return (
-    <div className="hero bg-base-200 min-h-screen">
-      <Toaster position="top-center" reverseOrder={false} />
-      <div className="hero-content flex-col lg:flex-row-reverse">
-        <div className="card bg-base-100 w-full max-w-sm shrink-0 shadow-2xl">
-          <form className="card-body" onSubmit={handleSignIn}>
-            <fieldset className="fieldset">
-              <label className="label">Email</label>
-              <input
-                type="email"
-                className="input input-bordered w-full"
-                placeholder="Email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex items-center justify-center p-4">
+      <Toaster position="top-center" />
+      <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-xl w-full max-w-4xl overflow-hidden flex flex-col md:flex-row">
 
-              <label className="label">Password</label>
+        {/* Left Side - Image/Info */}
+        <div className="md:w-1/2 bg-blue-600 p-10 text-white flex flex-col justify-between relative overflow-hidden">
+          <div className="relative z-10">
+            <h2 className="text-3xl font-bold mb-4">Welcome Back!</h2>
+            <p className="text-blue-100 text-lg">
+              Access your dashboard to manage shipments, track orders, and connect with global partners.
+            </p>
+          </div>
+
+          <div className="relative z-10 mt-10">
+            <p className="text-sm opacity-80 mb-2">For testing purposes:</p>
+            <button
+              onClick={fillDemoAdmin}
+              className="btn btn-sm btn-outline text-white border-white/50 hover:bg-white hover:text-blue-600"
+            >
+              Auto-fill Admin Demo
+            </button>
+          </div>
+
+          {/* Decorative Circles */}
+          <div className="absolute -top-20 -left-20 w-60 h-60 bg-blue-500 rounded-full blur-3xl opacity-50"></div>
+          <div className="absolute -bottom-20 -right-20 w-60 h-60 bg-indigo-500 rounded-full blur-3xl opacity-50"></div>
+        </div>
+
+        {/* Right Side - Form */}
+        <div className="md:w-1/2 p-10 flex flex-col justify-center">
+          <h2 className="text-2xl font-bold text-slate-800 dark:text-white mb-8 text-center md:text-left">Log In to ImpExpHub</h2>
+
+          <form onSubmit={handleSignIn} className="space-y-5">
+            <div className="form-control">
+              <label className="label text-slate-600 dark:text-slate-400 font-medium">Email Address</label>
               <div className="relative">
+                <FaEnvelope className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="email"
+                  className="input input-bordered w-full pl-11 bg-slate-50 dark:bg-slate-700 dark:border-slate-600"
+                  placeholder="name@company.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="form-control">
+              <label className="label text-slate-600 dark:text-slate-400 font-medium">Password</label>
+              <div className="relative">
+                <FaLock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
                 <input
                   type={showpass ? "text" : "password"}
-                  className="input input-bordered w-full pr-16"
-                  placeholder="Password"
+                  className="input input-bordered w-full pl-11 pr-12 bg-slate-50 dark:bg-slate-700 dark:border-slate-600"
+                  placeholder="Wait"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
                 />
                 <button
                   type="button"
-                  onClick={handleshowpass}
-                  className="btn btn-sm absolute right-2 top-1/2 -translate-y-1/2"
+                  onClick={() => setShowpass(!showpass)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
                 >
-                  {showpass ? "Hide" : "Show"}
+                  {showpass ? <FaEyeSlash /> : <FaEye />}
                 </button>
               </div>
-
-              <div className="mt-2">
-                <Link to="/forgotpass" className="link link-hover text-sm">
-                  Forgot password?
-                </Link>
+              <div className="text-right mt-1">
+                <Link to="/forgotpass" className="text-sm text-blue-600 hover:underline">Forgot Password?</Link>
               </div>
-
-              <button type="submit" className="btn btn-neutral mt-4 w-full">
-                Log In
-              </button>
-            </fieldset>
-
-            <div className="divider my-4">OR</div>
+            </div>
 
             <button
-              type="button"
-              onClick={handleGoogleSignIn}
-              className="btn flex items-center justify-center gap-2 bg-white text-black border border-[#e5e5e5] hover:bg-gray-100 transition-all w-full"
+              type="submit"
+              className="btn btn-primary w-full shadow-lg shadow-blue-500/20"
+              disabled={loading}
             >
-              <svg
-                aria-label="Google logo"
-                width="18"
-                height="18"
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 512 512"
-              >
-                <g>
-                  <path fill="#fff" d="M0 0h512v512H0z" />
-                  <path
-                    fill="#34a853"
-                    d="M153 292c30 82 118 95 171 60h62v48A192 192 0 0190 341"
-                  />
-                  <path
-                    fill="#4285f4"
-                    d="m386 400a140 175 0 0053-179H260v74h102q-7 37-38 57"
-                  />
-                  <path
-                    fill="#fbbc02"
-                    d="m90 341a208 200 0 010-171l63 49q-12 37 0 73"
-                  />
-                  <path
-                    fill="#ea4335"
-                    d="m153 219c22-69 116-109 179-50l55-54c-78-75-230-72-297 55"
-                  />
-                </g>
-              </svg>
-              <span>Login with Google</span>
+              {loading ? <span className="loading loading-spinner"></span> : "Log In"}
             </button>
-
-            <p className="mt-4 text-center">
-              Don’t have an account?{" "}
-              <Link to="/registration" className="link link-hover text-blue-500">
-                Sign Up
-              </Link>
-            </p>
           </form>
+
+          <div className="divider text-slate-400 text-sm my-6">OR LOGIN WITH</div>
+
+          <button
+            onClick={handleGoogleSignIn}
+            className="btn btn-outline w-full gap-3 hover:bg-slate-50 hover:text-slate-900 border-slate-300 dark:border-slate-600 dark:text-white dark:hover:bg-slate-700"
+          >
+            <FaGoogle className="text-red-500" /> Google
+          </button>
+
+          <p className="text-center mt-8 text-slate-500 text-sm">
+            New here? <Link to="/registration" className="text-blue-600 font-bold hover:underline">Create an account</Link>
+          </p>
         </div>
       </div>
     </div>

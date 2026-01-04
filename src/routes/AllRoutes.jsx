@@ -15,10 +15,11 @@ import ProductDetails from "../page/Productsdetails/Produrctsdeatils";
 import { ImportDetails } from "../components/Importdetails/Importdetails";
 import MyExports from "../page/My Exports/MyExports";
 import CreateExportProduct from "../page/AddExports/Addexports";
+import About from "../page/About/About";
+import Contact from "../page/Contact/Contact";
 
 // Dashboard Pages
 import Overview from "../page/Dashboard/Overview";
-import AdminDashboard from "../page/Dashboard/AdminDashboard";
 import PendingImports from "../page/Dashboard/PendingImports";
 import ApprovedImports from "../page/Dashboard/ApprovedImports";
 import PendingExports from "../page/Dashboard/PendingExports";
@@ -37,6 +38,8 @@ export const router = createBrowserRouter([
       { path: "/login", Component: Signin },
       { path: "/allproducts", Component: Allproducts },
       { path: "/forgotpass", Component: ForgotPass },
+      { path: "/about", Component: About },
+      { path: "/contact", Component: Contact },
 
       { path: "/myimports", element: <PrivRoutes><Myimports /></PrivRoutes> },
       { path: "/myexports", element: <PrivRoutes><MyExports /></PrivRoutes> },
@@ -52,12 +55,9 @@ export const router = createBrowserRouter([
         ),
       },
       {
+        // Made Public as per requirements
         path: "/productdetails/:id",
-        element: (
-          <PrivRoutes>
-            <ProductDetails />
-          </PrivRoutes>
-        ),
+        element: <ProductDetails />,
       },
     ],
   },
